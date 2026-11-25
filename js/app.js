@@ -52,6 +52,7 @@
 
   // 2. INISIALISASI SAAT DOM READY
   document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
     initPWA();
     initLucide();
     bindNavigation();
@@ -61,6 +62,26 @@
     checkInitialConnection();
     updateOnlineStatus();
   });
+
+  // ==========================================================================
+  // THEME MANAGEMENT (LIGHT MODE DEFAULT + TOGGLE DARK MODE)
+  // ==========================================================================
+  function initTheme() {
+    const savedTheme = localStorage.getItem('EKASIR_THEME') || 'light';
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+
+    const btnToggle = document.getElementById('btn-toggle-theme');
+    if (btnToggle) {
+      btnToggle.addEventListener('click', () => {
+        const isDark = document.documentElement.classList.toggle('dark');
+        localStorage.setItem('EKASIR_THEME', isDark ? 'dark' : 'light');
+      });
+    }
+  }
 
   // ==========================================================================
   // PWA REGISTRATION & ONLINE/OFFLINE INDICATOR
@@ -271,9 +292,9 @@
     document.querySelectorAll('.nav-link').forEach((link) => {
       const v = link.getAttribute('data-view');
       if (v === viewName) {
-        link.className = 'nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm text-white bg-brand-600 shadow-sm transition';
+        link.className = 'nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-brand-600 to-teal-600 shadow-md shadow-brand-600/20 transition';
       } else {
-        link.className = 'nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition';
+        link.className = 'nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition';
       }
     });
 
@@ -281,11 +302,11 @@
     document.querySelectorAll('.mobile-nav-btn').forEach((btn) => {
       const v = btn.getAttribute('data-view');
       if (v === viewName) {
-        btn.classList.add('text-brand-400');
-        btn.classList.remove('text-slate-400');
+        btn.classList.add('text-brand-600', 'dark:text-brand-400', 'font-bold');
+        btn.classList.remove('text-slate-400', 'font-semibold');
       } else {
-        btn.classList.remove('text-brand-400');
-        btn.classList.add('text-slate-400');
+        btn.classList.remove('text-brand-600', 'dark:text-brand-400', 'font-bold');
+        btn.classList.add('text-slate-400', 'font-semibold');
       }
     });
 
@@ -332,9 +353,9 @@
     catPills.forEach((pill) => {
       pill.addEventListener('click', () => {
         catPills.forEach((p) => {
-          p.className = 'cat-pill px-3.5 py-1.5 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap';
+          p.className = 'cat-pill px-4 py-2 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-brand-400 whitespace-nowrap shadow-sm transition';
         });
-        pill.className = 'cat-pill px-3.5 py-1.5 rounded-full bg-brand-600 text-white whitespace-nowrap shadow-sm';
+        pill.className = 'cat-pill px-4 py-2 rounded-full bg-brand-600 text-white whitespace-nowrap shadow-sm shadow-brand-600/25 transition';
         state.activeCategory = pill.getAttribute('data-category');
         renderProductGrid();
       });
@@ -360,6 +381,43 @@
     // Camera Scan Trigger
     document.getElementById('btn-scan-camera').addEventListener('click', startCameraScanner);
     document.getElementById('btn-close-camera').addEventListener('click', stopCameraScanner);
+  }
+
+  function getCategoryVisual(category) {
+    const cat = (category || '').toLowerCase();
+    if (cat.includes('minum') || cat.includes('kopi') || cat.includes('drink')) {
+      return {
+        bg: 'bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-500/20 dark:to-orange-500/10',
+        iconColor: 'text-amber-600 dark:text-amber-400',
+        icon: 'coffee'
+      };
+    }
+    if (cat.includes('makan') || cat.includes('roti') || cat.includes('food') || cat.includes('snack')) {
+      return {
+        bg: 'bg-gradient-to-br from-rose-100 to-orange-100 dark:from-rose-500/20 dark:to-orange-500/10',
+        iconColor: 'text-rose-600 dark:text-rose-400',
+        icon: 'utensils'
+      };
+    }
+    if (cat.includes('pakai') || cat.includes('baju') || cat.includes('fashion') || cat.includes('kaos')) {
+      return {
+        bg: 'bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-500/20 dark:to-violet-500/10',
+        iconColor: 'text-indigo-600 dark:text-indigo-400',
+        icon: 'shirt'
+      };
+    }
+    if (cat.includes('jasa') || cat.includes('servis') || cat.includes('laundry')) {
+      return {
+        bg: 'bg-gradient-to-br from-sky-100 to-cyan-100 dark:from-sky-500/20 dark:to-cyan-500/10',
+        iconColor: 'text-sky-600 dark:text-sky-400',
+        icon: 'sparkles'
+      };
+    }
+    return {
+      bg: 'bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-500/20 dark:to-teal-500/10',
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      icon: 'shopping-bag'
+    };
   }
 
   function renderProductGrid() {
@@ -388,34 +446,38 @@
     filtered.forEach((prod) => {
       const card = document.createElement('div');
       card.className =
-        'bg-slate-900 border border-slate-800 hover:border-brand-500/50 rounded-2xl p-3 flex flex-col justify-between cursor-pointer transition shadow-sm hover:shadow-brand-900/20 active:scale-[0.98] group';
-      
+        'bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 hover:border-brand-500 dark:hover:border-brand-500/50 rounded-2xl p-3 flex flex-col justify-between cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] group';
+
       const isFisik = prod.tipe_stok === 'FISIK';
       const isOutOfStock = isFisik && prod.stok <= 0;
-      const stockBadgeColor = prod.stok <= 5 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-slate-800 text-slate-400';
+      const stockBadgeColor = prod.stok <= 5
+        ? 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/25'
+        : 'bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+
+      const visual = getCategoryVisual(prod.kategori);
 
       card.innerHTML = `
-        <div class="space-y-2">
-          <div class="w-full h-24 sm:h-28 rounded-xl bg-slate-800 overflow-hidden flex items-center justify-center relative">
+        <div class="space-y-2.5">
+          <div class="w-full h-24 sm:h-28 rounded-xl ${prod.foto_url ? 'bg-slate-100 dark:bg-slate-800' : visual.bg} overflow-hidden flex items-center justify-center relative">
             ${
               prod.foto_url
                 ? `<img src="${prod.foto_url}" alt="${prod.nama_produk}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" />`
-                : `<i data-lucide="package" class="w-8 h-8 text-slate-600"></i>`
+                : `<i data-lucide="${visual.icon}" class="w-9 h-9 ${visual.iconColor} group-hover:scale-110 transition duration-300"></i>`
             }
             ${
               isFisik
-                ? `<span class="absolute top-2 right-2 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${stockBadgeColor}">Stok: ${prod.stok}</span>`
-                : `<span class="absolute top-2 right-2 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Jasa</span>`
+                ? `<span class="absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full border backdrop-blur-sm ${stockBadgeColor}">Stok: ${prod.stok}</span>`
+                : `<span class="absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/90 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/25 backdrop-blur-sm">Made-to-Order</span>`
             }
           </div>
           <div>
-            <div class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">${prod.kategori || 'Umum'}</div>
-            <h4 class="text-xs sm:text-sm font-bold text-white line-clamp-2 leading-snug group-hover:text-brand-400 transition">${prod.nama_produk}</h4>
+            <div class="text-[10px] text-slate-400 uppercase tracking-wider font-bold">${prod.kategori || 'Umum'}</div>
+            <h4 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-brand-600 dark:group-hover:text-brand-400 transition">${prod.nama_produk}</h4>
           </div>
         </div>
-        <div class="pt-2 mt-2 border-t border-slate-800/80 flex items-center justify-between">
-          <div class="font-extrabold text-xs sm:text-sm text-emerald-400 font-mono">Rp ${formatNumber(prod.harga_jual)}</div>
-          <button class="w-7 h-7 rounded-lg bg-brand-600/20 text-brand-400 group-hover:bg-brand-600 group-hover:text-white flex items-center justify-center transition">
+        <div class="pt-2.5 mt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+          <div class="font-extrabold text-xs sm:text-sm text-brand-700 dark:text-emerald-400 font-mono">Rp ${formatNumber(prod.harga_jual)}</div>
+          <button class="w-7 h-7 rounded-xl bg-brand-50 dark:bg-brand-600/20 text-brand-600 dark:text-brand-400 group-hover:bg-brand-600 group-hover:text-white flex items-center justify-center transition shadow-sm">
             <i data-lucide="plus" class="w-4 h-4"></i>
           </button>
         </div>
@@ -571,9 +633,12 @@
     // Render Items
     if (state.cart.length === 0) {
       container.innerHTML = `
-        <div class="p-6 text-center text-slate-500 text-xs">
-          <i data-lucide="shopping-bag" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
-          <div>Keranjang masih kosong</div>
+        <div class="p-8 text-center text-slate-400 text-xs">
+          <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-2.5">
+            <i data-lucide="shopping-bag" class="w-6 h-6 text-slate-400"></i>
+          </div>
+          <div class="font-semibold text-slate-500 dark:text-slate-400">Keranjang masih kosong</div>
+          <div class="text-[11px] text-slate-400 mt-0.5">Klik produk di sebelah kiri untuk menambahkan</div>
         </div>
       `;
       initLucide();
@@ -582,23 +647,23 @@
 
     state.cart.forEach((item, index) => {
       const itemEl = document.createElement('div');
-      itemEl.className = 'p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 space-y-1.5 text-xs';
+      itemEl.className = 'p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 space-y-2 text-xs';
       itemEl.innerHTML = `
         <div class="flex items-start justify-between gap-2">
           <div class="overflow-hidden">
-            <h5 class="font-bold text-white truncate">${item.nama_produk}</h5>
-            <div class="text-[11px] text-emerald-400 font-mono">Rp ${formatNumber(item.harga_jual)}</div>
+            <h5 class="font-bold text-slate-900 dark:text-white truncate">${item.nama_produk}</h5>
+            <div class="text-[11px] text-brand-600 dark:text-emerald-400 font-mono font-semibold">Rp ${formatNumber(item.harga_jual)}</div>
           </div>
-          <div class="font-mono font-bold text-white">Rp ${formatNumber(item.harga_jual * item.qty)}</div>
+          <div class="font-mono font-bold text-slate-900 dark:text-white">Rp ${formatNumber(item.harga_jual * item.qty)}</div>
         </div>
-        <div class="flex items-center justify-between pt-1 border-t border-slate-700/40">
+        <div class="flex items-center justify-between pt-1.5 border-t border-slate-200/70 dark:border-slate-700/40">
           <div class="flex items-center gap-1.5">
-            <button class="btn-qty-minus w-6 h-6 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 flex items-center justify-center font-bold" data-index="${index}">-</button>
-            <span class="w-6 text-center font-mono font-bold text-white">${item.qty}</span>
-            <button class="btn-qty-plus w-6 h-6 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 flex items-center justify-center font-bold" data-index="${index}">+</button>
+            <button class="btn-qty-minus w-7 h-7 rounded-lg bg-white dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold shadow-sm" data-index="${index}">-</button>
+            <span class="w-7 text-center font-mono font-bold text-slate-900 dark:text-white">${item.qty}</span>
+            <button class="btn-qty-plus w-7 h-7 rounded-lg bg-white dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold shadow-sm" data-index="${index}">+</button>
           </div>
-          <button class="btn-remove-item text-slate-400 hover:text-red-400 p-1" data-index="${index}">
-            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          <button class="btn-remove-item text-slate-400 hover:text-red-500 p-1 transition" data-index="${index}">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
           </button>
         </div>
       `;
@@ -737,13 +802,13 @@
       const earnRate = Number(state.config.point_earn_rate || 10000);
       const estPoin = earnRate > 0 ? Math.floor(grandTotal / earnRate) : 0;
       memberBadge.innerHTML = `
-        <div class="font-bold text-white">${state.selectedCustomer.nama}</div>
-        <div class="text-[10px] text-brand-400">Poin Belanja: +${estPoin} Pts</div>
+        <div class="font-bold text-slate-900 dark:text-white">${state.selectedCustomer.nama}</div>
+        <div class="text-[10px] text-brand-600 dark:text-brand-400">Poin Belanja: +${estPoin} Pts</div>
       `;
     } else {
       memberBadge.innerHTML = `
-        <div class="font-bold text-white">Pelanggan Umum</div>
-        <div class="text-[10px] text-slate-400">Non-Member</div>
+        <div class="font-bold text-slate-900 dark:text-white">Pelanggan Umum</div>
+        <div class="text-[10px] text-slate-500 dark:text-slate-400">Non-Member</div>
       `;
     }
 
@@ -763,9 +828,9 @@
 
     document.querySelectorAll('.pay-method-tab').forEach((tab) => {
       if (tab.getAttribute('data-method') === method) {
-        tab.className = 'pay-method-tab py-2 rounded-xl bg-brand-600 text-white border border-brand-500 shadow-sm transition text-center';
+        tab.className = 'pay-method-tab py-2.5 rounded-xl bg-brand-600 text-white border border-brand-600 shadow-sm transition text-center';
       } else {
-        tab.className = 'pay-method-tab py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 transition text-center';
+        tab.className = 'pay-method-tab py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition text-center';
       }
     });
 
@@ -1337,15 +1402,15 @@
 
       filtered.forEach((cust) => {
         const item = document.createElement('div');
-        item.className = 'p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700/80 cursor-pointer flex items-center justify-between transition';
+        item.className = 'p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/80 border border-slate-200/80 dark:border-slate-700/50 cursor-pointer flex items-center justify-between transition';
         item.innerHTML = `
           <div>
-            <div class="font-bold text-white text-xs">${cust.nama}</div>
-            <div class="text-[11px] text-slate-400 font-mono">${cust.no_wa}</div>
+            <div class="font-bold text-slate-900 dark:text-white text-xs">${cust.nama}</div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">${cust.no_wa}</div>
           </div>
           <div class="text-right text-xs">
-            <div class="text-amber-400 font-bold">${cust.total_poin || 0} Pts</div>
-            <div class="text-[10px] text-slate-400">${cust.tier || 'Reguler'}</div>
+            <div class="text-amber-600 dark:text-amber-400 font-bold">${cust.total_poin || 0} Pts</div>
+            <div class="text-[10px] text-slate-500 dark:text-slate-400">${cust.tier || 'Reguler'}</div>
           </div>
         `;
         item.addEventListener('click', () => {
@@ -1430,24 +1495,24 @@
     tbody.innerHTML = '';
     state.products.forEach((prod) => {
       const tr = document.createElement('tr');
-      tr.className = 'hover:bg-slate-800/40 transition';
+      tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-800/40 transition';
       tr.innerHTML = `
-        <td class="p-3">
-          <div class="font-bold text-white">${prod.nama_produk}</div>
-          <div class="text-[10px] text-slate-500 font-mono">${prod.sku || '-'}</div>
+        <td class="p-3.5">
+          <div class="font-bold text-slate-900 dark:text-white">${prod.nama_produk}</div>
+          <div class="text-[10px] text-slate-400 font-mono">${prod.sku || '-'}</div>
         </td>
-        <td class="p-3 text-slate-300">${prod.kategori}</td>
-        <td class="p-3 font-semibold ${prod.tipe_stok === 'FISIK' ? 'text-amber-400' : 'text-emerald-400'}">${prod.tipe_stok}</td>
-        <td class="p-3 text-right font-mono text-slate-400">Rp ${formatNumber(prod.harga_modal)}</td>
-        <td class="p-3 text-right font-mono font-bold text-white">Rp ${formatNumber(prod.harga_jual)}</td>
-        <td class="p-3 text-center font-mono ${prod.stok <= 5 && prod.tipe_stok === 'FISIK' ? 'text-red-400 font-bold' : 'text-slate-300'}">${prod.tipe_stok === 'FISIK' ? prod.stok : '-'}</td>
-        <td class="p-3 text-center">
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${prod.is_active ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}">
+        <td class="p-3.5 text-slate-600 dark:text-slate-300">${prod.kategori}</td>
+        <td class="p-3.5 font-semibold ${prod.tipe_stok === 'FISIK' ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${prod.tipe_stok}</td>
+        <td class="p-3.5 text-right font-mono text-slate-500 dark:text-slate-400">Rp ${formatNumber(prod.harga_modal)}</td>
+        <td class="p-3.5 text-right font-mono font-bold text-slate-900 dark:text-white">Rp ${formatNumber(prod.harga_jual)}</td>
+        <td class="p-3.5 text-center font-mono ${prod.stok <= 5 && prod.tipe_stok === 'FISIK' ? 'text-red-500 dark:text-red-400 font-bold' : 'text-slate-700 dark:text-slate-300'}">${prod.tipe_stok === 'FISIK' ? prod.stok : '-'}</td>
+        <td class="p-3.5 text-center">
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${prod.is_active ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'}">
             ${prod.is_active ? 'Aktif' : 'Nonaktif'}
           </span>
         </td>
-        <td class="p-3 text-center">
-          <button class="btn-edit-prod p-1 text-slate-400 hover:text-white" data-id="${prod.product_id}"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+        <td class="p-3.5 text-center">
+          <button class="btn-edit-prod p-1.5 rounded-lg text-slate-400 hover:text-brand-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition" data-id="${prod.product_id}"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
         </td>
       `;
 
@@ -1474,15 +1539,15 @@
     tbody.innerHTML = '';
     state.customers.forEach((cust) => {
       const tr = document.createElement('tr');
-      tr.className = 'hover:bg-slate-800/40 transition';
+      tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-800/40 transition';
       tr.innerHTML = `
-        <td class="p-3 font-bold text-white">${cust.nama}</td>
-        <td class="p-3 font-mono text-slate-300">${cust.no_wa}</td>
-        <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-brand-400 font-bold">${cust.tier}</span></td>
-        <td class="p-3 text-center font-mono font-bold text-amber-400">${cust.total_poin || 0}</td>
-        <td class="p-3 text-right font-mono text-slate-300">Rp ${formatNumber(cust.total_belanja || 0)}</td>
-        <td class="p-3 text-right font-mono ${cust.total_piutang > 0 ? 'text-red-400 font-bold' : 'text-slate-400'}">Rp ${formatNumber(cust.total_piutang || 0)}</td>
-        <td class="p-3 text-center text-slate-400 font-mono text-[11px]">${cust.customer_id}</td>
+        <td class="p-3.5 font-bold text-slate-900 dark:text-white">${cust.nama}</td>
+        <td class="p-3.5 font-mono text-slate-600 dark:text-slate-300">${cust.no_wa}</td>
+        <td class="p-3.5"><span class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-50 dark:bg-slate-800 text-brand-700 dark:text-brand-400 font-bold">${cust.tier}</span></td>
+        <td class="p-3.5 text-center font-mono font-bold text-amber-600 dark:text-amber-400">${cust.total_poin || 0}</td>
+        <td class="p-3.5 text-right font-mono text-slate-700 dark:text-slate-300">Rp ${formatNumber(cust.total_belanja || 0)}</td>
+        <td class="p-3.5 text-right font-mono ${cust.total_piutang > 0 ? 'text-red-500 dark:text-red-400 font-bold' : 'text-slate-400'}">Rp ${formatNumber(cust.total_piutang || 0)}</td>
+        <td class="p-3.5 text-center text-slate-400 font-mono text-[11px]">${cust.customer_id}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -1493,13 +1558,13 @@
     tbody.innerHTML = '';
     state.staffList.forEach((stf) => {
       const tr = document.createElement('tr');
-      tr.className = 'hover:bg-slate-800/40 transition';
+      tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-800/40 transition';
       tr.innerHTML = `
-        <td class="p-3 font-mono text-slate-400">${stf.staff_id}</td>
-        <td class="p-3 font-bold text-white">${stf.nama}</td>
-        <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${stf.role === 'ADMIN' ? 'bg-purple-500/10 text-purple-400' : 'bg-slate-800 text-slate-300'}">${stf.role}</span></td>
-        <td class="p-3 text-center text-emerald-400 font-bold">${stf.status}</td>
-        <td class="p-3 text-center text-slate-400 text-xs">Tersedia</td>
+        <td class="p-3.5 font-mono text-slate-500 dark:text-slate-400">${stf.staff_id}</td>
+        <td class="p-3.5 font-bold text-slate-900 dark:text-white">${stf.nama}</td>
+        <td class="p-3.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${stf.role === 'ADMIN' ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}">${stf.role}</span></td>
+        <td class="p-3.5 text-center text-emerald-600 dark:text-emerald-400 font-bold">${stf.status}</td>
+        <td class="p-3.5 text-center text-slate-400 text-xs">Tersedia</td>
       `;
       tbody.appendChild(tr);
     });
