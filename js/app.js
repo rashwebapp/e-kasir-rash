@@ -55,6 +55,7 @@
     initTheme();
     initPWA();
     initLucide();
+    checkUrlPairing();
     bindNavigation();
     bindPosEvents();
     bindModals();
@@ -62,6 +63,57 @@
     checkInitialConnection();
     updateOnlineStatus();
   });
+
+  // ==========================================================================
+  // MAGIC PAIRING VIA URL PARAMETER (?pair=... atau ?url=...&key=...)
+  // ==========================================================================
+  function checkUrlPairing() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const pairToken = params.get('pair');
+      const paramUrl = params.get('url');
+      const paramKey = params.get('key');
+
+      let paired = false;
+      if (pairToken) {
+        const decoded = JSON.parse(decodeURIComponent(escape(atob(pairToken))));
+        if (decoded && decoded.u && decoded.k) {
+          state.webAppUrl = decoded.u;
+          state.secretKey = decoded.k;
+          localStorage.setItem('EKASIR_GAS_URL', decoded.u);
+          localStorage.setItem('EKASIR_SECRET_KEY', decoded.k);
+          paired = true;
+        }
+      } else if (paramUrl && paramKey) {
+        state.webAppUrl = paramUrl;
+        state.secretKey = paramKey;
+        localStorage.setItem('EKASIR_GAS_URL', paramUrl);
+        localStorage.setItem('EKASIR_SECRET_KEY', paramKey);
+        paired = true;
+      }
+
+      if (paired) {
+        // Bersihkan URL agar Secret Key tidak terlihat di address bar
+        window.history.replaceState({}, document.title, window.location.pathname);
+        setTimeout(() => {
+          showToast('Perangkat berhasil disambungkan otomatis ke database toko!', 'success');
+        }, 300);
+      }
+    } catch (err) {
+      console.warn('Gagal memproses link pairing:', err);
+    }
+  }
+
+  function generatePairingUrl() {
+    if (!state.webAppUrl || !state.secretKey) {
+      showToast('Sambungkan database terlebih dahulu sebelum membuat link pairing.', 'warning');
+      return null;
+    }
+    const payload = JSON.stringify({ u: state.webAppUrl, k: state.secretKey });
+    const encoded = btoa(unescape(encodeURIComponent(payload)));
+    const baseUrl = window.location.origin + window.location.pathname;
+    return `${baseUrl}?pair=${encodeURIComponent(encoded)}`;
+  }
 
   // ==========================================================================
   // THEME MANAGEMENT (LIGHT MODE DEFAULT + TOGGLE DARK MODE)
@@ -1665,6 +1717,38 @@
       } else {
         showToast(res.message || 'Gagal ekspor laporan.', 'error');
       }
+    });
+
+    // Magic Pairing Perangkat Kasir Baru
+    document.getElementById('btn-copy-pairing-link').addEventListener('click', async () => {
+      const pairingUrl = generatePairingUrl();
+      if (!pairingUrl) return;
+      try {
+        await navigator.clipboard.writeText(pairingUrl);
+        showToast('Link Setup Kasir disalin! Silakan kirim ke WhatsApp perangkat baru.', 'success');
+      } catch (err) {
+        prompt('Salin link berikut dan buka di perangkat kasir baru:', pairingUrl);
+      }
+    });
+
+    document.getElementById('btn-show-pairing-qr').addEventListener('click', () => {
+      const pairingUrl = generatePairingUrl();
+      if (!pairingUrl) return;
+      const qrContainer = document.getElementById('qr-pairing-container');
+      qrContainer.innerHTML = '';
+      new QRCode(qrContainer, {
+        text: pairingUrl,
+        width: 192,
+        height: 192,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+      openModal('modal-qr-pairing');
+    });
+
+    document.getElementById('btn-close-qr-pairing').addEventListener('click', () => {
+      closeModal('modal-qr-pairing');
     });
   }
 

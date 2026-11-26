@@ -615,6 +615,31 @@
             </button>
           </div>
         </div>
+
+        <!-- Kartu Magic Pairing Perangkat Kasir Baru -->
+        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-slate-900 dark:to-slate-900 border border-emerald-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 shadow-sm">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h3 class="text-sm font-extrabold text-emerald-900 dark:text-white flex items-center gap-2">
+                <i data-lucide="smartphone" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i>
+                Sambungkan Perangkat Kasir Baru (Magic Pairing)
+              </h3>
+              <p class="text-xs text-emerald-700 dark:text-slate-400 mt-1">
+                Kirim link atau scan QR Code ini dari HP/Tablet kasir baru agar langsung tersambung ke database toko tanpa mengetik URL & Secret Key.
+              </p>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2.5 pt-1">
+            <button id="btn-copy-pairing-link" class="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-emerald-100 dark:hover:bg-slate-700 border border-emerald-200 dark:border-slate-700 text-emerald-800 dark:text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="copy" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i>
+              <span>Salin Link Setup Kasir</span>
+            </button>
+            <button id="btn-show-pairing-qr" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="qr-code" class="w-4 h-4"></i>
+              <span>Tampilkan QR Pairing</span>
+            </button>
+          </div>
+        </div>
       </section>
 
     </main>
@@ -1052,6 +1077,24 @@
       <button id="btn-confirm-void-submit" class="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition">
         Konfirmasi VOID Transaksi
       </button>
+    </div>
+  </div>
+
+  <!-- MODAL: QR PAIRING PERANGKAT KASIR BARU -->
+  <div id="modal-qr-pairing" class="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/85 modal-backdrop hidden items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-sm text-slate-900 dark:text-white">Scan QR untuk Setup Kasir Baru</h3>
+        <button id="btn-close-qr-pairing" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-4 bg-white rounded-2xl inline-block mx-auto shadow-md border border-slate-200">
+        <div id="qr-pairing-container" class="w-48 h-48 flex items-center justify-center"></div>
+      </div>
+      <p class="text-xs text-slate-500 dark:text-slate-400">
+        Scan QR ini menggunakan kamera HP/Tablet kasir baru. Otomatis terbuka dan langsung tersambung ke toko!
+      </p>
     </div>
   </div>
 
