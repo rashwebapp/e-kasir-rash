@@ -9,7 +9,7 @@
  * ============================================================================
  */
 
-const CACHE_NAME = 'ekasir-rash-v1.5.1';
+const CACHE_NAME = 'ekasir-rash-v1.5.2';
 const STATIC_ASSETS = [
   './',
   './index.html',

@@ -297,6 +297,14 @@
 
             renderCategories();
             renderProducts();
+          } else {
+            const errMsg = (data && data.message) ? data.message : 'Gagal memuat katalog dari server.';
+            document.getElementById('pub-product-grid').innerHTML =
+              `<div class="col-span-full p-8 bg-white dark:bg-slate-900 rounded-2xl border border-amber-200 dark:border-amber-500/30 text-center text-xs space-y-1">
+                <div class="font-bold text-amber-600 dark:text-amber-400">Katalog Belum Dapat Dimuat</div>
+                <div class="text-slate-500 dark:text-slate-400">${errMsg}</div>
+                <div class="text-[11px] text-slate-400 pt-1">Pastikan <b>Code.gs</b> terbaru sudah di-deploy sebagai <b>New version</b> di Google Apps Script.</div>
+              </div>`;
           }
         } catch (err) {
           document.getElementById('pub-product-grid').innerHTML =
@@ -329,6 +337,14 @@
             state.activeCategory = cat;
             renderCategories();
             renderProducts();
+          } else {
+            const errMsg = (data && data.message) ? data.message : 'Gagal memuat katalog dari server.';
+            document.getElementById('pub-product-grid').innerHTML =
+              `<div class="col-span-full p-8 bg-white dark:bg-slate-900 rounded-2xl border border-amber-200 dark:border-amber-500/30 text-center text-xs space-y-1">
+                <div class="font-bold text-amber-600 dark:text-amber-400">Katalog Belum Dapat Dimuat</div>
+                <div class="text-slate-500 dark:text-slate-400">${errMsg}</div>
+                <div class="text-[11px] text-slate-400 pt-1">Pastikan <b>Code.gs</b> terbaru sudah di-deploy sebagai <b>New version</b> di Google Apps Script.</div>
+              </div>`;
           });
           container.appendChild(btn);
         });
