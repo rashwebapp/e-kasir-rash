@@ -259,6 +259,7 @@
       }
 
       applyStoreConfigToUI();
+      renderCategoryPills();
       renderProductGrid();
       renderCartUI();
       renderStaffAuthUI();
@@ -435,8 +436,62 @@
     document.getElementById('btn-close-camera').addEventListener('click', stopCameraScanner);
   }
 
+  function renderCategoryPills() {
+    const container = document.getElementById('category-pills');
+    if (!container) return;
+
+    const uniqueCats = [...new Set(state.products.filter((p) => p.is_active && p.kategori).map((p) => p.kategori))];
+    const categories = ['ALL', ...uniqueCats];
+
+    container.innerHTML = '';
+    categories.forEach((cat) => {
+      const btn = document.createElement('button');
+      const isActive = state.activeCategory === cat;
+      btn.setAttribute('data-category', cat);
+      btn.textContent = cat === 'ALL' ? 'Semua Menu' : cat;
+      btn.className = isActive
+        ? 'cat-pill px-4 py-2 rounded-full bg-brand-600 text-white whitespace-nowrap shadow-sm shadow-brand-600/25 transition'
+        : 'cat-pill px-4 py-2 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-brand-400 whitespace-nowrap shadow-sm transition';
+
+      btn.addEventListener('click', () => {
+        state.activeCategory = cat;
+        renderCategoryPills();
+        renderProductGrid();
+      });
+      container.appendChild(btn);
+    });
+  }
+
   function getCategoryVisual(category) {
     const cat = (category || '').toLowerCase();
+    if (cat.includes('template') || cat.includes('digital')) {
+      return {
+        bg: 'bg-gradient-to-br from-violet-100 to-indigo-100 dark:from-violet-500/20 dark:to-indigo-500/10',
+        iconColor: 'text-violet-600 dark:text-violet-400',
+        icon: 'file-code-2'
+      };
+    }
+    if (cat.includes('website') || cat.includes('landing')) {
+      return {
+        bg: 'bg-gradient-to-br from-sky-100 to-blue-100 dark:from-sky-500/20 dark:to-blue-500/10',
+        iconColor: 'text-sky-600 dark:text-sky-400',
+        icon: 'globe'
+      };
+    }
+    if (cat.includes('webapp') || cat.includes('pos') || cat.includes('sistem')) {
+      return {
+        bg: 'bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-500/20 dark:to-teal-500/10',
+        iconColor: 'text-emerald-600 dark:text-emerald-400',
+        icon: 'laptop'
+      };
+    }
+    if (cat.includes('add-on') || cat.includes('addon') || cat.includes('fitur')) {
+      return {
+        bg: 'bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-500/20 dark:to-orange-500/10',
+        iconColor: 'text-amber-600 dark:text-amber-400',
+        icon: 'puzzle'
+      };
+    }
     if (cat.includes('minum') || cat.includes('kopi') || cat.includes('drink')) {
       return {
         bg: 'bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-500/20 dark:to-orange-500/10',
