@@ -413,7 +413,20 @@
     });
   }
 
+  function isAdminRole() {
+    return !!(state.currentStaff && String(state.currentStaff.role).toUpperCase() === 'ADMIN');
+  }
+
   function switchView(viewName) {
+    const adminOnlyViews = ['laporan', 'karyawan', 'settings'];
+    if (adminOnlyViews.includes(viewName) && !isAdminRole()) {
+      showToast('Akses Ditolak: Menu ini khusus Admin / Pemilik Toko.', 'error');
+      if (!state.currentStaff) {
+        openStaffLoginModal();
+      }
+      return;
+    }
+
     state.currentView = viewName;
     document.querySelectorAll('.view-panel').forEach((el) => {
       el.classList.add('hidden');
@@ -1358,9 +1371,54 @@
       btnAuth.onclick = handleLogout;
     } else {
       currentNameEl.textContent = 'Guest';
-      currentRoleEl.textContent = 'Kasir';
+      currentRoleEl.textContent = 'Belum Login';
       btnLabel.textContent = 'Login';
       btnAuth.onclick = () => openStaffLoginModal();
+    }
+
+    // Terapkan RBAC pada Sidebar, Bottom Nav, dan Tombol Admin
+    const isAdmin = isAdminRole();
+    const adminViews = ['laporan', 'karyawan', 'settings'];
+
+    // Sembunyikan grup "Manajemen Owner" di sidebar desktop jika bukan Admin
+    const ownerGroup = document.querySelector('aside > div:nth-child(2)');
+    if (ownerGroup) {
+      if (isAdmin) {
+        ownerGroup.classList.remove('hidden');
+      } else {
+        ownerGroup.classList.add('hidden');
+      }
+    }
+
+    // Sembunyikan tombol nav mobile untuk menu Admin
+    document.querySelectorAll('.mobile-nav-btn').forEach((btn) => {
+      const v = btn.getAttribute('data-view');
+      if (adminViews.includes(v)) {
+        if (isAdmin) {
+          btn.classList.remove('hidden');
+          btn.classList.add('flex');
+        } else {
+          btn.classList.add('hidden');
+          btn.classList.remove('flex');
+        }
+      }
+    });
+
+    // Sembunyikan tombol Tambah Produk jika bukan Admin
+    const btnAddProd = document.getElementById('btn-add-product');
+    if (btnAddProd) {
+      if (isAdmin) {
+        btnAddProd.classList.remove('hidden');
+        btnAddProd.classList.add('flex');
+      } else {
+        btnAddProd.classList.add('hidden');
+        btnAddProd.classList.remove('flex');
+      }
+    }
+
+    // Jika sedang berada di halaman Admin namun user bukan Admin, kembalikan ke Kasir
+    if (adminViews.includes(state.currentView) && !isAdmin) {
+      switchView('kasir');
     }
   }
 
@@ -1692,6 +1750,7 @@
   function renderProductTable() {
     const tbody = document.getElementById('product-table-body');
     tbody.innerHTML = '';
+    const isAdmin = isAdminRole();
     state.products.forEach((prod) => {
       const tr = document.createElement('tr');
       tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-800/40 transition';
@@ -1702,7 +1761,7 @@
         </td>
         <td class="p-3.5 text-slate-600 dark:text-slate-300">${prod.kategori}</td>
         <td class="p-3.5 font-semibold ${prod.tipe_stok === 'FISIK' ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${prod.tipe_stok}</td>
-        <td class="p-3.5 text-right font-mono text-slate-500 dark:text-slate-400">Rp ${formatNumber(prod.harga_modal)}</td>
+        <td class="p-3.5 text-right font-mono text-slate-500 dark:text-slate-400">${isAdmin ? 'Rp ' + formatNumber(prod.harga_modal) : '•••••'}</td>
         <td class="p-3.5 text-right font-mono font-bold text-slate-900 dark:text-white">Rp ${formatNumber(prod.harga_jual)}</td>
         <td class="p-3.5 text-center font-mono ${prod.stok <= 5 && prod.tipe_stok === 'FISIK' ? 'text-red-500 dark:text-red-400 font-bold' : 'text-slate-700 dark:text-slate-300'}">${prod.tipe_stok === 'FISIK' ? prod.stok : '-'}</td>
         <td class="p-3.5 text-center">
@@ -1711,22 +1770,25 @@
           </span>
         </td>
         <td class="p-3.5 text-center">
-          <button class="btn-edit-prod p-1.5 rounded-lg text-slate-400 hover:text-brand-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition" data-id="${prod.product_id}"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+          ${isAdmin ? `<button class="btn-edit-prod p-1.5 rounded-lg text-slate-400 hover:text-brand-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition" data-id="${prod.product_id}"><i data-lucide="edit-3" class="w-4 h-4"></i></button>` : '<span class="text-slate-400 text-[10px]">Read-Only</span>'}
         </td>
       `;
 
-      tr.querySelector('.btn-edit-prod').addEventListener('click', () => {
-        document.getElementById('product-form-title').textContent = 'Edit Data Produk';
-        document.getElementById('prod-form-id').value = prod.product_id;
-        document.getElementById('prod-form-name').value = prod.nama_produk;
-        document.getElementById('prod-form-sku').value = prod.sku;
-        document.getElementById('prod-form-category').value = prod.kategori;
-        document.getElementById('prod-form-cost').value = prod.harga_modal;
-        document.getElementById('prod-form-price').value = prod.harga_jual;
-        document.getElementById('prod-form-stock').value = prod.stok;
-        document.getElementById('prod-form-type').value = prod.tipe_stok;
-        openModal('modal-product-form');
-      });
+      const btnEdit = tr.querySelector('.btn-edit-prod');
+      if (btnEdit) {
+        btnEdit.addEventListener('click', () => {
+          document.getElementById('product-form-title').textContent = 'Edit Data Produk';
+          document.getElementById('prod-form-id').value = prod.product_id;
+          document.getElementById('prod-form-name').value = prod.nama_produk;
+          document.getElementById('prod-form-sku').value = prod.sku;
+          document.getElementById('prod-form-category').value = prod.kategori;
+          document.getElementById('prod-form-cost').value = prod.harga_modal;
+          document.getElementById('prod-form-price').value = prod.harga_jual;
+          document.getElementById('prod-form-stock').value = prod.stok;
+          document.getElementById('prod-form-type').value = prod.tipe_stok;
+          openModal('modal-product-form');
+        });
+      }
 
       tbody.appendChild(tr);
     });
