@@ -57,25 +57,32 @@
     </div>
   </header>
 
-  <!-- HERO BANNER LANDING PAGE -->
-  <section class="bg-gradient-to-br from-emerald-600 via-brand-700 to-teal-800 text-white">
-    <div class="max-w-6xl mx-auto px-4 py-7 sm:py-9 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-      <div class="space-y-2 max-w-xl">
-        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-[11px] font-bold tracking-wide">
+  <!-- HERO BANNER LANDING PAGE (EFEK PARALLAX MULTI-LAYER) -->
+  <section id="parallax-hero" class="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-brand-700 to-teal-900 text-white">
+    <!-- Layer Latar Belakang Parallax -->
+    <div class="parallax-layer absolute inset-0 opacity-15 pointer-events-none" data-speed="0.25" style="background-image: radial-gradient(circle, #ffffff 1.2px, transparent 1.2px); background-size: 24px 24px;"></div>
+    <div class="parallax-layer absolute -top-20 -right-16 w-72 h-72 rounded-full bg-emerald-400/25 blur-3xl pointer-events-none" data-speed="0.45"></div>
+    <div class="parallax-layer absolute -bottom-24 -left-16 w-80 h-80 rounded-full bg-teal-300/20 blur-3xl pointer-events-none" data-speed="0.35"></div>
+
+    <!-- Konten Hero dengan Kedalaman Parallax -->
+    <div class="relative z-10 max-w-6xl mx-auto px-4 py-10 sm:py-14 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      <div class="parallax-layer space-y-3 max-w-xl" data-speed="0.15">
+        <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-[11px] font-bold tracking-wide shadow-sm">
           <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300"></i>
           Sekali Bayar • Rp0 Biaya Server Bulanan
         </span>
-        <h2 class="text-xl sm:text-2xl font-extrabold leading-snug">Pilih Produk Digital atau Jasa WebApp Siap Pakai</h2>
-        <p class="text-xs sm:text-sm text-emerald-100 leading-relaxed">
+        <h2 class="text-2xl sm:text-3xl font-extrabold leading-tight tracking-tight">Pilih Produk Digital atau Jasa WebApp Siap Pakai</h2>
+        <p class="text-xs sm:text-sm text-emerald-50/90 leading-relaxed">
           Pilih layanan yang Anda butuhkan di bawah ini, isi keranjang pesanan, lalu klik pesan untuk langsung terhubung dengan tim kami di WhatsApp.
         </p>
       </div>
-      <div class="flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-4 py-3 text-xs">
-        <div class="w-9 h-9 rounded-xl bg-white text-brand-700 flex items-center justify-center font-extrabold flex-shrink-0">
-          <i data-lucide="shield-check" class="w-5 h-5"></i>
+
+      <div class="parallax-layer flex items-center gap-3.5 bg-white/10 backdrop-blur-md border border-white/25 rounded-2xl px-5 py-4 text-xs shadow-xl" data-speed="-0.1">
+        <div class="w-11 h-11 rounded-xl bg-white text-brand-700 flex items-center justify-center font-extrabold flex-shrink-0 shadow-sm">
+          <i data-lucide="shield-check" class="w-6 h-6"></i>
         </div>
         <div>
-          <div class="font-bold">100% Cloud Milik Sendiri</div>
+          <div class="font-extrabold text-sm">100% Cloud Milik Sendiri</div>
           <div class="text-emerald-100 text-[11px]">Didampingi serah terima jarak jauh</div>
         </div>
       </div>
@@ -221,12 +228,31 @@
 
       document.addEventListener('DOMContentLoaded', () => {
         initTheme();
+        initParallax();
         lucide.createIcons();
         resolveGasUrl();
         bindEvents();
         loadCatalog();
         renderCart();
       });
+
+      function initParallax() {
+        const layers = document.querySelectorAll('.parallax-layer');
+        let ticking = false;
+        window.addEventListener('scroll', () => {
+          if (!ticking) {
+            window.requestAnimationFrame(() => {
+              const scrollY = window.scrollY;
+              layers.forEach((layer) => {
+                const speed = parseFloat(layer.getAttribute('data-speed') || '0');
+                layer.style.transform = `translate3d(0, ${scrollY * speed}px, 0)`;
+              });
+              ticking = false;
+            });
+            ticking = true;
+          }
+        }, { passive: true });
+      }
 
       function initTheme() {
         const saved = localStorage.getItem('EKASIR_THEME') || 'light';
