@@ -27,7 +27,7 @@
       }
     }
   </script>
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide@latest" defer onload="if(window.lucide) window.lucide.createIcons()"></script>
 </head>
 <body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col antialiased transition-colors duration-200">
 
@@ -226,10 +226,16 @@
         searchKeyword: ''
       };
 
+      function safeLucide() {
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+          try { window.lucide.createIcons(); } catch (e) {}
+        }
+      }
+
       document.addEventListener('DOMContentLoaded', () => {
         initTheme();
         initParallax();
-        lucide.createIcons();
+        safeLucide();
         resolveGasUrl();
         bindEvents();
         loadCatalog();
@@ -389,7 +395,7 @@
           card.addEventListener('click', () => addToCart(prod));
           grid.appendChild(card);
         });
-        lucide.createIcons();
+        safeLucide();
       }
 
       function addToCart(prod) {
@@ -455,7 +461,7 @@
           el.querySelector('.btn-d').addEventListener('click', () => updateQty(idx, -item.qty));
           container.appendChild(el);
         });
-        lucide.createIcons();
+        safeLucide();
       }
 
       function openCheckoutModal() {
@@ -546,7 +552,7 @@
           document.getElementById('modal-pub-checkout').classList.remove('flex');
           btn.disabled = false;
           btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i><span>Kirim Pesanan via WhatsApp Sekarang</span>';
-          lucide.createIcons();
+          safeLucide();
 
           showToast('Pesanan tercatat! Membuka WhatsApp...', 'success');
           window.open(`https://wa.me/${targetPhone}?text=${encodeURIComponent(waMsg)}`, '_blank');
