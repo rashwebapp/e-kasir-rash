@@ -47,7 +47,9 @@
     activePayMethod: 'TUNAI',
     lastTransaction: null,
     pwaPrompt: null,
-    html5QrCode: null
+    html5QrCode: null,
+    isOrderMode: false,
+    publicGasUrl: ''
   };
 
   // 2. INISIALISASI SAAT DOM READY
@@ -70,9 +72,23 @@
   function checkUrlPairing() {
     try {
       const params = new URLSearchParams(window.location.search);
+      const modeParam = params.get('mode');
+      const gParam = params.get('g');
       const pairToken = params.get('pair');
       const paramUrl = params.get('url');
       const paramKey = params.get('key');
+
+      // Mode Pemesanan Publik Customer (?mode=order&g=...)
+      if (modeParam === 'order') {
+        state.isOrderMode = true;
+        if (gParam) {
+          state.publicGasUrl = decodeURIComponent(escape(atob(gParam)));
+        } else if (state.webAppUrl) {
+          state.publicGasUrl = state.webAppUrl;
+        }
+        applyOrderModeUI();
+        return;
+      }
 
       let paired = false;
       if (pairToken) {
@@ -113,6 +129,51 @@
     const encoded = btoa(unescape(encodeURIComponent(payload)));
     const baseUrl = window.location.origin + window.location.pathname;
     return `${baseUrl}?pair=${encodeURIComponent(encoded)}`;
+  }
+
+  function generateCustomerOrderUrl() {
+    if (!state.webAppUrl) {
+      showToast('Sambungkan database terlebih dahulu sebelum membuat link order.', 'warning');
+      return null;
+    }
+    const encodedGas = btoa(unescape(encodeURIComponent(state.webAppUrl)));
+    const baseUrl = window.location.origin + window.location.pathname;
+    return `${baseUrl}?mode=order&g=${encodeURIComponent(encodedGas)}`;
+  }
+
+  function applyOrderModeUI() {
+    // Sembunyikan menu internal kasir/admin agar aman dan fokus untuk pembeli
+    const aside = document.querySelector('aside');
+    const mobileNav = document.querySelector('nav');
+    const userDrop = document.getElementById('user-info-dropdown');
+    const shiftPill = document.getElementById('shift-status-pill');
+    const btnSync = document.getElementById('btn-sync-data');
+    const btnHold = document.getElementById('btn-hold-cart');
+    const btnViewHold = document.getElementById('btn-view-hold-cart');
+    const btnSelectCust = document.getElementById('btn-select-customer');
+    const btnScanCam = document.getElementById('btn-scan-camera');
+    const btnCheckout = document.getElementById('btn-checkout');
+
+    if (aside) aside.classList.add('lg:hidden');
+    if (mobileNav) mobileNav.classList.add('hidden');
+    if (userDrop) userDrop.classList.add('hidden');
+    if (shiftPill) shiftPill.classList.add('hidden');
+    if (btnSync) btnSync.classList.add('hidden');
+    if (btnHold) btnHold.classList.add('hidden');
+    if (btnViewHold) btnViewHold.classList.add('hidden');
+    if (btnSelectCust) btnSelectCust.closest('div.p-3')?.classList.add('hidden');
+    if (btnScanCam) btnScanCam.classList.add('hidden');
+
+    if (btnCheckout) {
+      btnCheckout.classList.add('col-span-2');
+      btnCheckout.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i><span>Pesan via WhatsApp</span>';
+    }
+    const mobileCartBar = document.getElementById('mobile-cart-bar');
+    if (mobileCartBar) {
+      mobileCartBar.classList.remove('bottom-16');
+      mobileCartBar.classList.add('bottom-4');
+    }
+    initLucide();
   }
 
   // ==========================================================================
@@ -237,6 +298,30 @@
   // CEK KONEKSI & LOAD INITIAL DATA
   // ==========================================================================
   async function checkInitialConnection() {
+    if (state.isOrderMode) {
+      if (!state.publicGasUrl) {
+        showToast('Link pemesanan belum terhubung ke toko.', 'error');
+        return;
+      }
+      try {
+        const res = await fetch(`${state.publicGasUrl}?action=getPublicCatalog`);
+        const data = await res.json();
+        if (data && data.success) {
+          if (data.config) state.config = { ...state.config, ...data.config };
+          if (data.products) state.products = data.products;
+          applyStoreConfigToUI();
+          renderCategoryPills();
+          renderProductGrid();
+          renderCartUI();
+        } else {
+          showToast(data.message || 'Gagal memuat katalog toko.', 'error');
+        }
+      } catch (err) {
+        showToast('Gagal memuat katalog. Periksa koneksi internet Anda.', 'error');
+      }
+      return;
+    }
+
     if (!state.webAppUrl || !state.secretKey) {
       openModal('modal-setup-connection');
       return;
@@ -902,6 +987,13 @@
     }
 
     const { grandTotal } = calculateCartTotals();
+
+    if (state.isOrderMode) {
+      document.getElementById('cust-order-total').textContent = `Rp ${formatNumber(grandTotal)}`;
+      openModal('modal-customer-order');
+      return;
+    }
+
     document.getElementById('checkout-total-bill').textContent = `Rp ${formatNumber(grandTotal)}`;
 
     const memberBadge = document.getElementById('checkout-member-badge');
@@ -1804,6 +1896,103 @@
 
     document.getElementById('btn-close-qr-pairing').addEventListener('click', () => {
       closeModal('modal-qr-pairing');
+    });
+
+    // Salin Link Order Customer (?mode=order)
+    document.getElementById('btn-copy-order-link').addEventListener('click', async () => {
+      const orderUrl = generateCustomerOrderUrl();
+      if (!orderUrl) return;
+      try {
+        await navigator.clipboard.writeText(orderUrl);
+        showToast('Link Order Customer disalin! Siap dibagikan ke bio/WhatsApp.', 'success');
+      } catch (err) {
+        prompt('Salin link pemesanan berikut untuk dibagikan ke customer:', orderUrl);
+      }
+    });
+
+    // Checkout Customer Mode (?mode=order)
+    document.getElementById('btn-close-customer-order').addEventListener('click', () => {
+      closeModal('modal-customer-order');
+    });
+
+    document.getElementById('btn-submit-customer-order').addEventListener('click', async () => {
+      const custName = document.getElementById('cust-order-name').value.trim();
+      const custWa = document.getElementById('cust-order-wa').value.trim();
+      const notes = document.getElementById('cust-order-notes').value.trim();
+
+      if (!custName || !custWa) {
+        showToast('Mohon isi Nama dan Nomor WhatsApp Anda.', 'warning');
+        return;
+      }
+
+      const btn = document.getElementById('btn-submit-customer-order');
+      btn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>Mengirim Pesanan...</span>';
+      initLucide();
+
+      const itemsPayload = state.cart.map((item) => ({
+        product_id: item.product_id,
+        qty: item.qty
+      }));
+
+      let trxId = 'ORD-' + Date.now();
+      let storePhone = state.config.store_phone || '085174273313';
+      let storeName = state.config.store_name || 'RASH Studio';
+      let totalFinal = calculateCartTotals().grandTotal;
+
+      try {
+        const response = await fetch(state.publicGasUrl, {
+          method: 'POST',
+          mode: 'cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'createPublicOrder',
+            customer_name: custName,
+            customer_wa: custWa,
+            notes: notes,
+            items: itemsPayload
+          })
+        });
+        const res = await response.json();
+        if (res && res.success) {
+          trxId = res.trx_id || trxId;
+          storePhone = res.store_phone || storePhone;
+          storeName = res.store_name || storeName;
+          totalFinal = res.grand_total || totalFinal;
+        }
+      } catch (err) {
+        console.warn('Order fallback ke WA langsung:', err);
+      }
+
+      // Format pesan WhatsApp ke Developer/Pemilik
+      let targetPhone = storePhone.replace(/[^0-9]/g, '');
+      if (targetPhone.startsWith('08')) targetPhone = '628' + targetPhone.substring(2);
+
+      let waMsg = `Halo *${storeName}*, saya mau pesan:\n`;
+      waMsg += `No. Order: *${trxId}*\n`;
+      waMsg += `Nama: ${custName}\n`;
+      waMsg += `No. WA: ${custWa}\n`;
+      waMsg += `------------------------------------\n`;
+      state.cart.forEach((itm) => {
+        waMsg += `• ${itm.nama_produk} x${itm.qty} = Rp ${formatNumber(itm.harga_jual * itm.qty)}\n`;
+      });
+      waMsg += `------------------------------------\n`;
+      waMsg += `*Total Estimasi: Rp ${formatNumber(totalFinal)}*\n`;
+      if (notes) waMsg += `Catatan: ${notes}\n`;
+      waMsg += `\nMohon info langkah selanjutnya ya, terima kasih!`;
+
+      // Bersihkan keranjang & tutup modal
+      state.cart = [];
+      saveCartLocal();
+      renderCartUI();
+      closeModal('modal-customer-order');
+
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i><span>Kirim Pesanan via WhatsApp Sekarang</span>';
+      initLucide();
+
+      showToast('Pesanan tercatat! Mengalihkan ke WhatsApp...', 'success');
+      window.open(`https://wa.me/${targetPhone}?text=${encodeURIComponent(waMsg)}`, '_blank');
     });
   }
 
