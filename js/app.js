@@ -137,8 +137,8 @@
       return null;
     }
     const encodedGas = btoa(unescape(encodeURIComponent(state.webAppUrl)));
-    const baseUrl = window.location.origin + window.location.pathname;
-    return `${baseUrl}?mode=order&g=${encodeURIComponent(encodedGas)}`;
+    const baseDir = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+    return `${baseDir}order.html?g=${encodeURIComponent(encodedGas)}`;
   }
 
   function applyOrderModeUI() {
