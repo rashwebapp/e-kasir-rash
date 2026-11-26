@@ -1878,13 +1878,16 @@
       }
     });
 
-    document.getElementById('btn-show-pairing-qr').addEventListener('click', () => {
-      const pairingUrl = generatePairingUrl();
-      if (!pairingUrl) return;
+    let currentQrFilename = 'QR-Code-RASH.png';
+
+    function openQrShareModal(url, title, desc, filename) {
+      currentQrFilename = filename || 'QR-Code-RASH.png';
+      document.getElementById('qr-modal-title').textContent = title;
+      document.getElementById('qr-modal-desc').textContent = desc;
       const qrContainer = document.getElementById('qr-pairing-container');
       qrContainer.innerHTML = '';
       new QRCode(qrContainer, {
-        text: pairingUrl,
+        text: url,
         width: 192,
         height: 192,
         colorDark: '#000000',
@@ -1892,6 +1895,44 @@
         correctLevel: QRCode.CorrectLevel.M
       });
       openModal('modal-qr-pairing');
+    }
+
+    document.getElementById('btn-show-pairing-qr').addEventListener('click', () => {
+      const pairingUrl = generatePairingUrl();
+      if (!pairingUrl) return;
+      openQrShareModal(
+        pairingUrl,
+        'Scan QR untuk Setup Kasir Baru',
+        'Scan QR ini menggunakan kamera HP/Tablet kasir baru. Otomatis terbuka dan langsung tersambung ke toko!',
+        'QR-Setup-Kasir-E-Kasir.png'
+      );
+    });
+
+    document.getElementById('btn-show-order-qr').addEventListener('click', () => {
+      const orderUrl = generateCustomerOrderUrl();
+      if (!orderUrl) return;
+      openQrShareModal(
+        orderUrl,
+        'QR Pemesanan Customer (Self-Order)',
+        'Cetak atau bagikan QR ini ke calon klien/customer. Scan pakai kamera HP langsung masuk ke etalase pemesanan!',
+        'QR-Order-RASH-Studio.png'
+      );
+    });
+
+    document.getElementById('btn-download-qr-png').addEventListener('click', () => {
+      const container = document.getElementById('qr-pairing-container');
+      const canvas = container.querySelector('canvas');
+      const img = container.querySelector('img');
+      const src = canvas ? canvas.toDataURL('image/png') : (img ? img.src : '');
+      if (!src) return showToast('QR Code belum siap diunduh.', 'warning');
+
+      const link = document.createElement('a');
+      link.href = src;
+      link.download = currentQrFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Gambar QR berhasil diunduh!', 'success');
     });
 
     document.getElementById('btn-close-qr-pairing').addEventListener('click', () => {
